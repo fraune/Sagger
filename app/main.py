@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (
     QWidget,
     QSlider,
     QLabel,
-    QComboBox
+    QComboBox,
 )
 from PySide6.QtGui import QPainter
 from PySide6.QtCore import Qt
@@ -18,15 +18,17 @@ from app.SagStyle import SagStyle
 class SaggingTextEdit(QPlainTextEdit):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.weight = 1.0  # Default weight parameter controlling "heaviness" of each line
+        self.weight = (
+            1.0  # Default weight parameter controlling "heaviness" of each line
+        )
         self.sag_style = SagStyle.HANGING_END
-        
+
         # Set a bottom margin to reduce clipping of sagging text
         self.setViewportMargins(0, 0, 0, 100)
-        
+
         # Dictionary to cache precalculated hanging offsets per block
         self.hanging_offsets = {}
-        
+
         # Recalculate offsets whenever the text changes
         self.textChanged.connect(self.updateHangingOffsets)
 
@@ -41,7 +43,7 @@ class SaggingTextEdit(QPlainTextEdit):
             line_width = fm.horizontalAdvance(block_text)
             center = line_width / 2.0
             sag_factor = self.weight / 300.0
-            max_offset = sag_factor * (center ** 2)
+            max_offset = sag_factor * (center**2)
             cum_width = 0
             for i, ch in enumerate(block_text):
                 char_width = fm.horizontalAdvance(ch)
@@ -63,24 +65,26 @@ class SaggingTextEdit(QPlainTextEdit):
         painter.setRenderHint(QPainter.Antialiasing)
         painter.setClipping(False)
         painter.setFont(self.font())
-        
+
         # Fill the background using the widget's base color
         painter.fillRect(self.viewport().rect(), self.palette().base())
-        
+
         fm = painter.fontMetrics()
-        
+
         # Iterate over each text block (each line)
         block = self.document().firstBlock()
         while block.isValid():
             block_text = block.text()
             # Get the block geometry relative to the viewport
-            block_rect = self.blockBoundingGeometry(block).translated(self.contentOffset())
-            
+            block_rect = self.blockBoundingGeometry(block).translated(
+                self.contentOffset()
+            )
+
             # Define the baseline: top of block plus the ascent of the font
             baseline = block_rect.y() + fm.ascent()
-            
+
             x = block_rect.x()
-            
+
             # For hanging style, use precomputed offsets if available
             if self.sag_style == SagStyle.HANGING_END:
                 offsets = self.hanging_offsets.get(block.blockNumber())
@@ -90,7 +94,7 @@ class SaggingTextEdit(QPlainTextEdit):
                     line_width = fm.horizontalAdvance(block_text)
                     center = line_width / 2.0
                     sag_factor = self.weight / 300.0
-                    max_offset = sag_factor * (center ** 2)
+                    max_offset = sag_factor * (center**2)
                     cum_width = 0
                     for i, ch in enumerate(block_text):
                         char_width = fm.horizontalAdvance(ch)
@@ -101,7 +105,7 @@ class SaggingTextEdit(QPlainTextEdit):
                             offset = ((relative_center / line_width) ** 2) * max_offset
                             offsets.append(offset)
                         cum_width += char_width
-                
+
                 for i, ch in enumerate(block_text):
                     char_width = fm.horizontalAdvance(ch)
                     # Use precalculated offset
@@ -115,7 +119,7 @@ class SaggingTextEdit(QPlainTextEdit):
                     # Default behavior: no sag
                     painter.drawText(x, baseline, ch)
                     x += char_width
-            
+
             block = block.next()
 
 
