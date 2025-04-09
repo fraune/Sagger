@@ -11,7 +11,7 @@ class HangingEndCodeEditor(CodeEditorBase):
         self.textChanged.connect(self.updateHangingOffsets)
 
     def updateHangingOffsets(self):
-        """Precalculate hanging style offsets for each text block and adjust bottom margin accordingly."""
+        """Precalculate hanging style offsets for each text block without adjusting viewport margins directly."""
         fm = self.fontMetrics()
         self.hanging_offsets.clear()
         block = self.document().firstBlock()
@@ -22,7 +22,7 @@ class HangingEndCodeEditor(CodeEditorBase):
             line_width = fm.horizontalAdvance(block_text)
             center = line_width / 2.0
             sag_factor = self.weight / 300.0
-            max_offset = sag_factor * (center**2)
+            max_offset = sag_factor * (center ** 2)
             cum_width = 0
             line_max = 0  # Maximum offset for this line
             for i, ch in enumerate(block_text):
@@ -30,8 +30,8 @@ class HangingEndCodeEditor(CodeEditorBase):
                 if i == 0:
                     offset = 0
                 else:
-                    relative_center = cum_width + (char_width / 2.0)
-                    offset = ((relative_center / line_width) ** 2) * max_offset
+                    # Avoid division by zero if line_width is 0
+                    offset = (((cum_width + (char_width / 2.0)) / line_width) ** 2) * max_offset if line_width > 0 else 0
                 offsets.append(offset)
                 if offset > line_max:
                     line_max = offset
@@ -40,6 +40,12 @@ class HangingEndCodeEditor(CodeEditorBase):
             if line_max > overall_max_sag:
                 overall_max_sag = line_max
             block = block.next()
+
+        # Instead of adjusting the viewport margins, force a recalculation of the document layout
+        # to include any extra vertical space required by the sag offsets.
+        self.document().adjustSize()
+        self.updateGeometry()
+        self.viewport().update()
 
     def paintEvent(self, event):
         # Custom paint event that uses the precomputed hanging offsets.
