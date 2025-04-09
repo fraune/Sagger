@@ -4,9 +4,7 @@ Custom code editor, where long lines sag, helping reinforce good coding practice
 
 ## Demo
 
-<video src="https://github.com/fraune/Sagger/blob/main/assets/sagger_demo.mov" type="video/mov" width="640">
-  Your browser does not support the video tag.
-</video>
+<video src="https://github.com/fraune/Sagger/blob/main/assets/sagger_demo.mov" type="video/mov" width="640"></video>
 
 ## Goals
 
