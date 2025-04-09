@@ -2,125 +2,20 @@ import sys
 from PySide6.QtWidgets import (
     QApplication,
     QMainWindow,
-    QPlainTextEdit,
     QVBoxLayout,
     QWidget,
     QSlider,
     QLabel,
     QComboBox,
 )
-from PySide6.QtGui import QPainter
 from PySide6.QtCore import Qt
 
 from app.SagStyle import SagStyle
-
-
-class SaggingTextEdit(QPlainTextEdit):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.weight = (
-            1.0  # Default weight parameter controlling "heaviness" of each line
-        )
-        self.sag_style = SagStyle.HANGING_END
-
-        # Set a bottom margin to reduce clipping of sagging text
-        self.setViewportMargins(0, 0, 0, 100)
-
-        # Dictionary to cache precalculated hanging offsets per block
-        self.hanging_offsets = {}
-
-        # Recalculate offsets whenever the text changes
-        self.textChanged.connect(self.updateHangingOffsets)
-
-    def updateHangingOffsets(self):
-        """Precalculate hanging style offsets for each text block."""
-        fm = self.fontMetrics()
-        self.hanging_offsets.clear()
-        block = self.document().firstBlock()
-        while block.isValid():
-            block_text = block.text()
-            offsets = []
-            line_width = fm.horizontalAdvance(block_text)
-            center = line_width / 2.0
-            sag_factor = self.weight / 300.0
-            max_offset = sag_factor * (center**2)
-            cum_width = 0
-            for i, ch in enumerate(block_text):
-                char_width = fm.horizontalAdvance(ch)
-                if i == 0 or i == len(block_text) - 1:
-                    offsets.append(0)
-                else:
-                    # Compute the center x position of the character relative to the start of the line
-                    relative_center = cum_width + (char_width / 2.0)
-                    # Quadratic sag: grows with the square of the relative position
-                    offset = ((relative_center / line_width) ** 2) * max_offset
-                    offsets.append(offset)
-                cum_width += char_width
-            self.hanging_offsets[block.blockNumber()] = offsets
-            block = block.next()
-
-    def paintEvent(self, event):
-        # Custom paint event to draw text along a curved baseline
-        painter = QPainter(self.viewport())
-        painter.setRenderHint(QPainter.Antialiasing)
-        painter.setClipping(False)
-        painter.setFont(self.font())
-
-        # Fill the background using the widget's base color
-        painter.fillRect(self.viewport().rect(), self.palette().base())
-
-        fm = painter.fontMetrics()
-
-        # Iterate over each text block (each line)
-        block = self.document().firstBlock()
-        while block.isValid():
-            block_text = block.text()
-            # Get the block geometry relative to the viewport
-            block_rect = self.blockBoundingGeometry(block).translated(
-                self.contentOffset()
-            )
-
-            # Define the baseline: top of block plus the ascent of the font
-            baseline = block_rect.y() + fm.ascent()
-
-            x = block_rect.x()
-
-            # For hanging style, use precomputed offsets if available
-            if self.sag_style == SagStyle.HANGING_END:
-                offsets = self.hanging_offsets.get(block.blockNumber())
-                # If offsets are not available or outdated, compute them on the fly
-                if offsets is None or len(offsets) != len(block_text):
-                    offsets = []
-                    line_width = fm.horizontalAdvance(block_text)
-                    center = line_width / 2.0
-                    sag_factor = self.weight / 300.0
-                    max_offset = sag_factor * (center**2)
-                    cum_width = 0
-                    for i, ch in enumerate(block_text):
-                        char_width = fm.horizontalAdvance(ch)
-                        if i == 0 or i == len(block_text) - 1:
-                            offsets.append(0)
-                        else:
-                            relative_center = cum_width + (char_width / 2.0)
-                            offset = ((relative_center / line_width) ** 2) * max_offset
-                            offsets.append(offset)
-                        cum_width += char_width
-
-                for i, ch in enumerate(block_text):
-                    char_width = fm.horizontalAdvance(ch)
-                    # Use precalculated offset
-                    offset = offsets[i] if i < len(offsets) else 0
-                    painter.drawText(x, baseline + offset, ch)
-                    x += char_width
-            else:
-                # (For completeness, if other sag styles were to be added, they can be handled here.)
-                for i, ch in enumerate(block_text):
-                    char_width = fm.horizontalAdvance(ch)
-                    # Default behavior: no sag
-                    painter.drawText(x, baseline, ch)
-                    x += char_width
-
-            block = block.next()
+from app.EditorStyles import (
+    HangingEndCodeEditor,
+    DroopingCenterCodeEditor,
+    PlainCodeEditor,
+)
 
 
 class MainWindow(QMainWindow):
@@ -128,8 +23,10 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("Sagger Code Editor")
 
-        # Create our custom text editor widget
-        self.editor = SaggingTextEdit()
+        # Set default sag style
+        self.currentSagStyle = SagStyle.HANGING_END
+        # Create our custom text editor widget based on the sag style
+        self.editor = self.createEditor(self.currentSagStyle)
         self.editor.setPlainText("def my_function():\n    print('Hello World')\n")
 
         # Create a slider to adjust the "weight" parameter interactively.
@@ -144,18 +41,31 @@ class MainWindow(QMainWindow):
         self.sag_combo = QComboBox()
         self.sag_combo.addItem(SagStyle.HANGING_END.value)
         self.sag_combo.addItem(SagStyle.DROOPING_CENTER.value)
-        self.sag_combo.setCurrentIndex(0)  # Default to "Full Curve"
+        self.sag_combo.addItem(SagStyle.NO_SAG.value)
+        # Set default combo index corresponding to currentSagStyle
+        self.sag_combo.setCurrentIndex(0)
         self.sag_combo.currentIndexChanged.connect(self.updateSagStyle)
 
         # Lay out the editor, slider, and sag style selector in the main window.
         central_widget = QWidget()
-        layout = QVBoxLayout(central_widget)
-        layout.addWidget(self.editor)
-        layout.addWidget(self.slider_label)
-        layout.addWidget(self.slider)
-        layout.addWidget(QLabel("Sag Style:"))
-        layout.addWidget(self.sag_combo)
+        self.layout = QVBoxLayout(central_widget)
+        self.layout.addWidget(self.editor)
+        self.layout.addWidget(self.slider_label)
+        self.layout.addWidget(self.slider)
+        self.layout.addWidget(QLabel("Sag Style:"))
+        self.layout.addWidget(self.sag_combo)
         self.setCentralWidget(central_widget)
+
+    def createEditor(self, style):
+        # Create a new editor instance based on the selected SagStyle.
+        if style == SagStyle.HANGING_END:
+            return HangingEndCodeEditor()
+        elif style == SagStyle.DROOPING_CENTER:
+            return DroopingCenterCodeEditor()
+        elif style == SagStyle.NO_SAG:
+            return PlainCodeEditor()
+        else:
+            return PlainCodeEditor()
 
     def updateWeight(self, value):
         # Update the weight value in our text editor and refresh the view.
@@ -164,11 +74,27 @@ class MainWindow(QMainWindow):
         self.editor.viewport().update()
 
     def updateSagStyle(self, index):
+        # Determine the new sag style based on the combo box index.
         if index == 0:
-            self.editor.sag_style = SagStyle.HANGING_END
+            new_style = SagStyle.HANGING_END
+        elif index == 1:
+            new_style = SagStyle.DROOPING_CENTER
         else:
-            self.editor.sag_style = SagStyle.DROOPING_CENTER
-        self.editor.viewport().update()
+            new_style = SagStyle.NO_SAG
+        if new_style != self.currentSagStyle:
+            # Preserve current text and weight before recreating the editor.
+            current_text = self.editor.toPlainText()
+            current_weight = self.editor.weight
+            # Remove the current editor widget.
+            self.layout.removeWidget(self.editor)
+            self.editor.deleteLater()
+            # Create a new editor widget.
+            self.editor = self.createEditor(new_style)
+            self.editor.setPlainText(current_text)
+            self.editor.weight = current_weight
+            # Insert the new editor at the top of the layout.
+            self.layout.insertWidget(0, self.editor)
+            self.currentSagStyle = new_style
 
 
 if __name__ == "__main__":
