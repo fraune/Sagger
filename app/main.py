@@ -98,6 +98,11 @@ class MainWindow(QMainWindow):
             self.layout.insertWidget(0, self.editor)
             self.currentSagStyle = new_style
 
+    def resizeEvent(self, event):
+        # Update the status bar with the current window dimensions
+        self.statusBar().showMessage(f"Window Size: {self.width()} x {self.height()}")
+        super().resizeEvent(event)
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
