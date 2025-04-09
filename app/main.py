@@ -8,7 +8,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QComboBox,
 )
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QEvent
 
 from app.SagStyle import SagStyle
 from app.editor_styles.HangingEndCodeEditor import HangingEndCodeEditor
@@ -26,6 +26,7 @@ class MainWindow(QMainWindow):
         # Create our custom text editor widget based on the sag style
         self.editor = self.createEditor(self.currentSagStyle)
         self.editor.setPlainText("def my_function():\n    print('Hello World')\n")
+        self.editor.viewport().installEventFilter(self)
 
         # Create a slider to adjust the "weight" parameter interactively.
         self.slider = QSlider(Qt.Horizontal)
@@ -98,10 +99,20 @@ class MainWindow(QMainWindow):
             self.layout.insertWidget(0, self.editor)
             self.currentSagStyle = new_style
 
+    def updateStatusBar(self):
+        editor_rect = self.editor.viewport().rect()
+        self.statusBar().showMessage(
+            f"Window Size: {self.width()} x {self.height()} | Editor Size: {editor_rect.width()} x {editor_rect.height()}"
+        )
+
     def resizeEvent(self, event):
-        # Update the status bar with the current window dimensions
-        self.statusBar().showMessage(f"Window Size: {self.width()} x {self.height()}")
+        self.updateStatusBar()
         super().resizeEvent(event)
+
+    def eventFilter(self, source, event):
+        if source == self.editor.viewport() and event.type() == QEvent.Resize:
+            self.updateStatusBar()
+        return super().eventFilter(source, event)
 
 
 if __name__ == "__main__":
