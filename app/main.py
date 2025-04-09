@@ -58,12 +58,12 @@ class MainWindow(QMainWindow):
 
     def createEditor(self, style):
         # Create a new editor instance based on the selected SagStyle.
-        if style == SagStyle.HANGING_END:
+        if style == SagStyle.NO_SAG:
+            return PlainCodeEditor()
+        elif style == SagStyle.HANGING_END:
             return HangingEndCodeEditor()
         elif style == SagStyle.DROOPING_CENTER:
             return DroopingCenterCodeEditor()
-        elif style == SagStyle.NO_SAG:
-            return PlainCodeEditor()
         else:
             return PlainCodeEditor()
 
