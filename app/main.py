@@ -25,6 +25,7 @@ class MainWindow(QMainWindow):
         self.currentSagStyle = SagStyle.NO_SAG
         # Create our custom text editor widget based on the sag style
         self.editor = self.createEditor(self.currentSagStyle)
+        # self.editor.setFixedHeight(200)
         self.editor.setPlainText("def my_function():\n    print('Hello World')\n")
         self.editor.viewport().installEventFilter(self)
 

@@ -40,9 +40,6 @@ class HangingEndCodeEditor(CodeEditorBase):
             if line_max > overall_max_sag:
                 overall_max_sag = line_max
             block = block.next()
-        # Adjust the bottom margin to ensure that deep sagging text is visible.
-        # Add some extra padding (e.g., 10 pixels) to the maximum sag offset.
-        self.setViewportMargins(0, 0, 0, int(overall_max_sag) + 10)
 
     def paintEvent(self, event):
         # Custom paint event that uses the precomputed hanging offsets.
