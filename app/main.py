@@ -35,7 +35,7 @@ class MainWindow(QMainWindow):
         self.slider.setMaximum(20)
         self.slider.setValue(10)
         self.slider.valueChanged.connect(self.updateWeight)
-        self.slider_label = QLabel(f"Weight: {self.slider.value()}")
+        self.slider_label = QLabel(f"Weight: {self.slider.value()/10:.1f}")
 
         # Create a combo box to select the sag style
         self.sag_combo = QComboBox()
@@ -69,9 +69,10 @@ class MainWindow(QMainWindow):
 
     def updateWeight(self, value):
         # Update the weight value in our text editor and refresh the view.
-        self.editor.weight = float(value)
-        self.slider_label.setText(f"Weight: {value}")
-        if hasattr(self.editor, 'updateHangingOffsets'):
+        weight_value = value / 10.0
+        self.editor.weight = weight_value
+        self.slider_label.setText(f"Weight: {weight_value:.1f}")
+        if hasattr(self.editor, "updateHangingOffsets"):
             self.editor.updateHangingOffsets()
         self.editor.viewport().update()
 
