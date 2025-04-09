@@ -1,5 +1,17 @@
 # Sagger
+
 Custom code editor, where long lines sag, helping reinforce good coding practices
+
+## Goals
+
+Sag Styles
+
+- [ ] "Hanging end"
+- [ ] "Droop"
+
+Linting
+
+- [ ] Long lines eventually "break"
 
 ## Setup
 
