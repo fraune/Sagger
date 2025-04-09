@@ -93,14 +93,7 @@ class HangingEndCodeEditor(CodeEditorBase):
                     cum_width += char_width
             for i, ch in enumerate(block_text):
                 char_width = fm.horizontalAdvance(ch)
-                # If this block is active (being edited) and it's the last character, force it to the normal baseline.
-                if (
-                    block.blockNumber() == active_block_number
-                    and i == len(block_text) - 1
-                ):
-                    offset = 0
-                else:
-                    offset = offsets[i] if i < len(offsets) else 0
+                offset = offsets[i] if i < len(offsets) else 0
                 painter.drawText(x, baseline + offset, ch)
                 x += char_width
             block = block.next()
