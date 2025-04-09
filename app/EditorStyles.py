@@ -1,5 +1,3 @@
-# File: app/EditorStyles.py
-
 from PySide6.QtWidgets import QPlainTextEdit
 from PySide6.QtGui import QPainter
 from PySide6.QtCore import Qt
@@ -47,8 +45,8 @@ class HangingEndCodeEditor(CodeEditorBase):
             cum_width = 0
             for i, ch in enumerate(block_text):
                 char_width = fm.horizontalAdvance(ch)
-                # Force the first and last character to use normal baseline.
-                if i == 0 or i == len(block_text) - 1:
+                # Force only the first character to use normal baseline.
+                if i == 0:
                     offsets.append(0)
                 else:
                     relative_center = cum_width + (char_width / 2.0)
@@ -67,6 +65,7 @@ class HangingEndCodeEditor(CodeEditorBase):
         painter.fillRect(self.viewport().rect(), self.palette().base())
         fm = painter.fontMetrics()
         block = self.document().firstBlock()
+        active_block_number = self.textCursor().block().blockNumber()
         while block.isValid():
             block_text = block.text()
             block_rect = self.blockBoundingGeometry(block).translated(
@@ -85,7 +84,7 @@ class HangingEndCodeEditor(CodeEditorBase):
                 cum_width = 0
                 for i, ch in enumerate(block_text):
                     char_width = fm.horizontalAdvance(ch)
-                    if i == 0 or i == len(block_text) - 1:
+                    if i == 0:
                         offsets.append(0)
                     else:
                         relative_center = cum_width + (char_width / 2.0)
@@ -94,7 +93,14 @@ class HangingEndCodeEditor(CodeEditorBase):
                     cum_width += char_width
             for i, ch in enumerate(block_text):
                 char_width = fm.horizontalAdvance(ch)
-                offset = offsets[i] if i < len(offsets) else 0
+                # If this block is active (being edited) and it's the last character, force it to the normal baseline.
+                if (
+                    block.blockNumber() == active_block_number
+                    and i == len(block_text) - 1
+                ):
+                    offset = 0
+                else:
+                    offset = offsets[i] if i < len(offsets) else 0
                 painter.drawText(x, baseline + offset, ch)
                 x += char_width
             block = block.next()
