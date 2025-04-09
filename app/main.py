@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (
     QComboBox,
 )
 from PySide6.QtCore import Qt, QEvent
-
+import signal
 from app.SagStyle import SagStyle
 from app.editor_styles.HangingEndCodeEditor import HangingEndCodeEditor
 from app.editor_styles.DroopingCenterCodeEditor import DroopingCenterCodeEditor
@@ -117,6 +117,7 @@ class MainWindow(QMainWindow):
 
 
 if __name__ == "__main__":
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
     app = QApplication(sys.argv)
     window = MainWindow()
     window.resize(800, 600)
