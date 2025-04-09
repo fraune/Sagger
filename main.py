@@ -20,35 +20,48 @@ class SaggingTextEdit(QPlainTextEdit):
         )
 
     def paintEvent(self, event):
-        # First, call the default painting behavior to draw text, cursor, etc.
-        super().paintEvent(event)
-
-        # Set up a painter to add our custom "sag" drawing on top of the text
+        # Custom paint event to draw text along a curved baseline
         painter = QPainter(self.viewport())
         painter.setRenderHint(QPainter.Antialiasing)
-
-        # Iterate over each text block (i.e., line)
+        painter.setFont(self.font())
+        
+        # Optionally fill the background using the widget's base color
+        painter.fillRect(self.viewport().rect(), self.palette().base())
+        
+        fm = painter.fontMetrics()
+        
+        # Iterate over each text block (each line)
         block = self.document().firstBlock()
         while block.isValid():
             block_text = block.text()
-            # Calculate the sag offset; here we use the number of characters and weight
-            # For demonstration: the offset increases as the text gets longer,
-            # then is wrapped with modulo so the offset stays within a visible range.
-            sag_offset = (len(block_text) * self.weight) % 10
-
-            # Determine the position of the block relative to the viewport
-            block_rect = self.blockBoundingGeometry(block).translated(
-                self.contentOffset()
-            )
-
-            # If there's text, draw a red line below the block that "sags"
-            if block_text:
-                start_x = block_rect.x()
-                end_x = block_rect.x() + block_rect.width()
-                # The sag is added to the y-coordinate of the block's bottom
-                mid_y = block_rect.y() + block_rect.height() + sag_offset
-                painter.setPen(Qt.red)
-                painter.drawLine(start_x, mid_y, end_x, mid_y)
+            # Get the block geometry relative to the viewport
+            block_rect = self.blockBoundingGeometry(block).translated(self.contentOffset())
+            
+            # Define the baseline: top of block plus the ascent of the font
+            baseline = block_rect.y() + fm.ascent()
+            
+            # Calculate the total width of the text line and its horizontal center
+            line_width = fm.horizontalAdvance(block_text)
+            center = line_width / 2.0
+            
+            # Define sag factor based on the weight; adjust the divisor to control sag intensity
+            sag_factor = self.weight / 300.0
+            # Compute maximum sag offset at the center of the line
+            max_offset = sag_factor * (center ** 2)
+            
+            x = block_rect.x()
+            for ch in block_text:
+                char_width = fm.horizontalAdvance(ch)
+                # Compute the center x position for the character relative to the start of the line
+                char_center = (x - block_rect.x()) + (char_width / 2.0)
+                
+                # Calculate the offset so that the ends have no sag and the center has maximum sag
+                offset = max_offset - sag_factor * ((char_center - center) ** 2)
+                
+                # Draw the character at position (x, baseline + offset)
+                painter.drawText(x, baseline + offset, ch)
+                x += char_width
+            
             block = block.next()
 
 
