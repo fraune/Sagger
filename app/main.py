@@ -71,6 +71,8 @@ class MainWindow(QMainWindow):
         # Update the weight value in our text editor and refresh the view.
         self.editor.weight = float(value)
         self.slider_label.setText(f"Weight: {value}")
+        if hasattr(self.editor, 'updateHangingOffsets'):
+            self.editor.updateHangingOffsets()
         self.editor.viewport().update()
 
     def updateSagStyle(self, index):
