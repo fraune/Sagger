@@ -1,6 +1,5 @@
 from PySide6.QtWidgets import QPlainTextEdit
 from PySide6.QtGui import QPainter
-from PySide6.QtCore import Qt
 
 
 class CodeEditorBase(QPlainTextEdit):
