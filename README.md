@@ -2,10 +2,6 @@
 
 Custom code editor, where long lines sag, helping reinforce good coding practices
 
-## Demo
-
-<video src='https://github.com/fraune/Sagger/blob/main/assets/sagger_demo.mov' />
-
 ## Goals
 
 Sag Styles
