@@ -31,10 +31,11 @@ class HangingEndCodeEditor(CodeEditorBase):
         self.textChanged.connect(self.updateHangingOffsets)
 
     def updateHangingOffsets(self):
-        """Precalculate hanging style offsets for each text block."""
+        """Precalculate hanging style offsets for each text block and adjust bottom margin accordingly."""
         fm = self.fontMetrics()
         self.hanging_offsets.clear()
         block = self.document().firstBlock()
+        overall_max_sag = 0  # Track maximum sag offset among all blocks
         while block.isValid():
             block_text = block.text()
             offsets = []
@@ -43,18 +44,25 @@ class HangingEndCodeEditor(CodeEditorBase):
             sag_factor = self.weight / 300.0
             max_offset = sag_factor * (center**2)
             cum_width = 0
+            line_max = 0  # Maximum offset for this line
             for i, ch in enumerate(block_text):
                 char_width = fm.horizontalAdvance(ch)
-                # Force only the first character to use normal baseline.
                 if i == 0:
-                    offsets.append(0)
+                    offset = 0
                 else:
                     relative_center = cum_width + (char_width / 2.0)
                     offset = ((relative_center / line_width) ** 2) * max_offset
-                    offsets.append(offset)
+                offsets.append(offset)
+                if offset > line_max:
+                    line_max = offset
                 cum_width += char_width
             self.hanging_offsets[block.blockNumber()] = offsets
+            if line_max > overall_max_sag:
+                overall_max_sag = line_max
             block = block.next()
+        # Adjust the bottom margin to ensure that deep sagging text is visible.
+        # Add some extra padding (e.g., 10 pixels) to the maximum sag offset.
+        self.setViewportMargins(0, 0, 0, int(overall_max_sag) + 10)
 
     def paintEvent(self, event):
         # Custom paint event that uses the precomputed hanging offsets.
