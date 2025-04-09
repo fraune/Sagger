@@ -24,7 +24,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Sagger Code Editor")
 
         # Set default sag style
-        self.currentSagStyle = SagStyle.HANGING_END
+        self.currentSagStyle = SagStyle.NO_SAG
         # Create our custom text editor widget based on the sag style
         self.editor = self.createEditor(self.currentSagStyle)
         self.editor.setPlainText("def my_function():\n    print('Hello World')\n")
@@ -35,13 +35,13 @@ class MainWindow(QMainWindow):
         self.slider.setMaximum(20)
         self.slider.setValue(10)
         self.slider.valueChanged.connect(self.updateWeight)
-        self.slider_label = QLabel("Weight: 10")
+        self.slider_label = QLabel(f"Weight: {self.slider.value()}")
 
         # Create a combo box to select the sag style
         self.sag_combo = QComboBox()
+        self.sag_combo.addItem(SagStyle.NO_SAG.value)
         self.sag_combo.addItem(SagStyle.HANGING_END.value)
         self.sag_combo.addItem(SagStyle.DROOPING_CENTER.value)
-        self.sag_combo.addItem(SagStyle.NO_SAG.value)
         # Set default combo index corresponding to currentSagStyle
         self.sag_combo.setCurrentIndex(0)
         self.sag_combo.currentIndexChanged.connect(self.updateSagStyle)
@@ -76,11 +76,12 @@ class MainWindow(QMainWindow):
     def updateSagStyle(self, index):
         # Determine the new sag style based on the combo box index.
         if index == 0:
-            new_style = SagStyle.HANGING_END
-        elif index == 1:
-            new_style = SagStyle.DROOPING_CENTER
-        else:
             new_style = SagStyle.NO_SAG
+        elif index == 1:
+            new_style = SagStyle.HANGING_END
+        else:
+            new_style = SagStyle.DROOPING_CENTER
+
         if new_style != self.currentSagStyle:
             # Preserve current text and weight before recreating the editor.
             current_text = self.editor.toPlainText()
