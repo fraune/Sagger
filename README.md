@@ -4,7 +4,7 @@ Custom code editor, where long lines sag, helping reinforce good coding practice
 
 ## Demo
 
-<div width="100">
+<div width="20">
 <video src="https://github.com/user-attachments/assets/154d9c3b-c9c4-4179-94fb-900e3fab0e80"></video>
 </div>
 
