@@ -1,5 +1,5 @@
 from enum import Enum
-from app.editor_styles.PlainCodeEditor import PlainCodeEditor
+from app.editor_styles.CodeEditorBase import CodeEditorBase
 from app.editor_styles.HangingEndCodeEditor import HangingEndCodeEditor
 from app.editor_styles.DroopingCenterCodeEditor import DroopingCenterCodeEditor
 
@@ -16,4 +16,4 @@ class SagStyle(Enum):
             case SagStyle.DROOPING_CENTER:
                 return DroopingCenterCodeEditor()
             case _:
-                return PlainCodeEditor()
+                return CodeEditorBase()
