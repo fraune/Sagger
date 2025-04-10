@@ -1,5 +1,6 @@
 from PySide6.QtWidgets import QPlainTextEdit, QTextEdit
 from PySide6.QtGui import QFont, QColor, QTextFormat, QPainter
+from PySide6.QtCore import QTimer, QRectF
 from app.components.LineNumberArea import LineNumberArea
 import math
 
@@ -22,6 +23,16 @@ class CodeEditorBase(QPlainTextEdit):
 
         # Cache to store computed offsets for each block
         self.offsets_cache = {}
+
+        # Initialize blinking cursor timer and flag
+        self.cursor_visible = True
+        self.blink_timer = QTimer(self)
+        self.blink_timer.timeout.connect(self._toggle_cursor_visibility)
+        self.blink_timer.start(500)  # blink every 500 ms
+
+    def _toggle_cursor_visibility(self):
+        self.cursor_visible = not self.cursor_visible
+        self.viewport().update()
 
     def updateLineNumberAreaWidth(self, _):
         self.setViewportMargins(self.lineNumberArea.computeWidth(), 0, 0, 0)
@@ -171,3 +182,81 @@ class CodeEditorBase(QPlainTextEdit):
         while block.isValid():
             self.drawBlock(painter, fm, block)
             block = block.next()
+
+        # Draw the custom blinking cursor if focused
+        if self.hasFocus() and self.cursor_visible:
+            cursor = self.textCursor()
+            block = cursor.block()
+            block_text = block.text()
+            block_rect = self.blockBoundingGeometry(block).translated(
+                self.contentOffset()
+            )
+            baseline = block_rect.y() + fm.ascent()
+
+            # Retrieve computed offsets for the block
+            offsets = self.offsets_cache.get(block.blockNumber())
+            if offsets is None or len(offsets) != len(block_text):
+                offsets = self.compute_offsets_for_block(fm, block_text)
+
+            # Determine cursor's position within the block
+            pos_in_block = cursor.position() - block.position()
+
+            # Compute x positions and character widths
+            x = block_rect.x()
+            x_centers = []
+            char_widths = []
+            for ch in block_text:
+                cw = fm.horizontalAdvance(ch)
+                char_widths.append(cw)
+                x_centers.append(x + cw / 2)
+                x += cw
+
+            if block_text:
+                if pos_in_block < len(block_text):
+                    cursor_center = x_centers[pos_in_block]
+                    letter_width = char_widths[pos_in_block]
+                    offset = offsets[pos_in_block]
+                    if len(x_centers) > 1:
+                        if pos_in_block == 0:
+                            dx = x_centers[1] - x_centers[0]
+                            dy = offsets[1] - offsets[0]
+                        elif pos_in_block == len(x_centers) - 1:
+                            dx = x_centers[-1] - x_centers[-2]
+                            dy = offsets[-1] - offsets[-2]
+                        else:
+                            dx = (
+                                x_centers[pos_in_block + 1]
+                                - x_centers[pos_in_block - 1]
+                            )
+                            dy = offsets[pos_in_block + 1] - offsets[pos_in_block - 1]
+                        slope = dy / dx if dx != 0 else 0
+                    else:
+                        slope = 0
+                else:
+                    # Cursor at end of block
+                    cursor_center = x_centers[-1] + char_widths[-1] / 2
+                    letter_width = char_widths[-1]
+                    offset = offsets[-1]
+                    if len(x_centers) > 1:
+                        dx = x_centers[-1] - x_centers[-2]
+                        dy = offsets[-1] - offsets[-2]
+                        slope = dy / dx if dx != 0 else 0
+                    else:
+                        slope = 0
+                angle = math.degrees(math.atan(slope))
+                painter.save()
+                painter.translate(cursor_center, baseline + offset - fm.ascent())
+                painter.rotate(angle)
+                cursor_rect = QRectF(-letter_width / 2, 0, letter_width, fm.height())
+                painter.fillRect(cursor_rect, QColor(180, 180, 180))
+                painter.restore()
+            else:
+                # If the block is empty, draw a simple block using a default width
+                default_width = fm.horizontalAdvance(" ")
+                painter.save()
+                painter.translate(
+                    block_rect.x() + default_width / 2, baseline - fm.ascent()
+                )
+                cursor_rect = QRectF(-default_width / 2, 0, default_width, fm.height())
+                painter.fillRect(cursor_rect, QColor(180, 180, 180))
+                painter.restore()
