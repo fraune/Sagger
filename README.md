@@ -55,3 +55,7 @@ To enforce linting rules:
 python -m black .
 ```
 
+Import cleanup
+```
+autoflake --in-place --remove-all-unused-imports --recursive .
+```
