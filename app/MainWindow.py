@@ -8,9 +8,6 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, QEvent
 from app.SagStyle import SagStyle
-from app.editor_styles.HangingEndCodeEditor import HangingEndCodeEditor
-from app.editor_styles.DroopingCenterCodeEditor import DroopingCenterCodeEditor
-from app.editor_styles.PlainCodeEditor import PlainCodeEditor
 
 
 class MainWindow(QMainWindow):

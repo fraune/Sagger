@@ -3,6 +3,7 @@ from app.editor_styles.PlainCodeEditor import PlainCodeEditor
 from app.editor_styles.HangingEndCodeEditor import HangingEndCodeEditor
 from app.editor_styles.DroopingCenterCodeEditor import DroopingCenterCodeEditor
 
+
 class SagStyle(Enum):
     NO_SAG = "No Sag"
     HANGING_END = "Hanging End"
