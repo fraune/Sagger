@@ -2,6 +2,8 @@
 
 Custom code editor, where long lines sag, helping reinforce good coding practices
 
+<video src='https://github.com/user-attachments/assets/5fac3370-e92f-49e4-b15b-3f7af9e65c25' />
+
 ## Goals
 
 Sag Styles
