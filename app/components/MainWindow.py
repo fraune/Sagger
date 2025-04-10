@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (
     QComboBox,
 )
 from PySide6.QtCore import Qt, QEvent
-from app.SagStyle import SagStyle
+from app.enum.SagStyle import SagStyle
 
 
 class MainWindow(QMainWindow):
