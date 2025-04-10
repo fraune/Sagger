@@ -30,6 +30,10 @@ class MainWindow(QMainWindow):
         self.slider.valueChanged.connect(self.updateWeight)
         self.slider_label = QLabel(f"Weight: {self.slider.value()/10:.1f}")
 
+        if self.currentSagStyle == SagStyle.NO_SAG:
+            self.slider.hide()
+            self.slider_label.hide()
+
         # Create a combo box to select the sag style by iterating over all items in the SagStyle enum
         self.sag_combo = QComboBox()
         for style in SagStyle:
@@ -74,6 +78,13 @@ class MainWindow(QMainWindow):
             # Insert the new editor at the top of the layout.
             self.layout.insertWidget(0, self.editor)
             self.currentSagStyle = new_style
+
+            if new_style == SagStyle.NO_SAG:
+                self.slider.hide()
+                self.slider_label.hide()
+            else:
+                self.slider.show()
+                self.slider_label.show()
 
     def updateStatusBar(self):
         editor_rect = self.editor.viewport().rect()
