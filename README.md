@@ -4,16 +4,23 @@ Custom code editor, where long lines sag, helping reinforce good coding practice
 
 <video src='https://github.com/user-attachments/assets/154d9c3b-c9c4-4179-94fb-900e3fab0e80'></video>
 
-## Goals
+## TODO
 
-Sag Styles
+Basic editor features
 
-- [ ] "Hanging end"
-- [ ] "Droop"
+- [ ] Opening project folder
+- [ ] Opening files
+- [ ] Saving files
+- [ ] Highlight selected code
+- [ ] Code syntax coloring
 
 Linting
 
-- [ ] Long lines eventually "break"
+- [ ] Long lines automatically "break" while writing them, based on linter configuration
+
+Bugs
+
+- [ ] Long lines with the drooping style may have the final characters of text displayed above the current line
 
 ## Setup
 
