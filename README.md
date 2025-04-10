@@ -68,3 +68,11 @@ Import cleanup
 ```
 autoflake --in-place --remove-all-unused-imports --recursive .
 ```
+
+## Running the app
+
+After environment setup, run:
+
+```
+python -m app.main
+```
