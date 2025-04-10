@@ -20,9 +20,8 @@ class MainWindow(QMainWindow):
 
         # Set default sag style
         self.currentSagStyle = SagStyle.NO_SAG
-        # Create our custom text editor widget based on the sag style
-        self.editor = self.createEditor(self.currentSagStyle)
-        # self.editor.setFixedHeight(200)
+        # Create our custom text editor widget based on the sag style using the enum's factory method
+        self.editor = self.currentSagStyle.create_editor()
         self.editor.setPlainText("def my_function():\n    print('Hello World')\n")
         self.editor.viewport().installEventFilter(self)
 
@@ -53,17 +52,6 @@ class MainWindow(QMainWindow):
         self.layout.addWidget(self.sag_combo)
         self.setCentralWidget(central_widget)
 
-    def createEditor(self, style):
-        # Create a new editor instance based on the selected SagStyle.
-        if style == SagStyle.NO_SAG:
-            return PlainCodeEditor()
-        elif style == SagStyle.HANGING_END:
-            return HangingEndCodeEditor()
-        elif style == SagStyle.DROOPING_CENTER:
-            return DroopingCenterCodeEditor()
-        else:
-            return PlainCodeEditor()
-
     def updateWeight(self, value):
         # Update the weight value in our text editor and refresh the view.
         weight_value = value / 10.0
@@ -89,8 +77,8 @@ class MainWindow(QMainWindow):
             # Remove the current editor widget.
             self.layout.removeWidget(self.editor)
             self.editor.deleteLater()
-            # Create a new editor widget.
-            self.editor = self.createEditor(new_style)
+            # Create a new editor widget using the enum's factory method.
+            self.editor = new_style.create_editor()
             self.editor.setPlainText(current_text)
             self.editor.weight = current_weight
             # Insert the new editor at the top of the layout.
