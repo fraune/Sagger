@@ -1,5 +1,6 @@
 from PySide6.QtWidgets import QPlainTextEdit, QTextEdit
 from PySide6.QtGui import QFont, QColor, QTextFormat, QPainter
+from PySide6.QtCore import QTimer, QRectF
 from app.components.LineNumberArea import LineNumberArea
 import math
 
@@ -22,6 +23,16 @@ class CodeEditorBase(QPlainTextEdit):
 
         # Cache to store computed offsets for each block
         self.offsets_cache = {}
+
+        # Initialize blinking cursor timer and flag
+        self.cursor_visible = True
+        self.blink_timer = QTimer(self)
+        self.blink_timer.timeout.connect(self._toggle_cursor_visibility)
+        self.blink_timer.start(500)  # blink every 500 ms
+
+    def _toggle_cursor_visibility(self):
+        self.cursor_visible = not self.cursor_visible
+        self.viewport().update()
 
     def updateLineNumberAreaWidth(self, _):
         self.setViewportMargins(self.lineNumberArea.computeWidth(), 0, 0, 0)
@@ -128,29 +139,29 @@ class CodeEditorBase(QPlainTextEdit):
         if offsets is None or len(offsets) != len(block_text):
             offsets = self.compute_offsets_for_block(fm, block_text)
 
-        # Compute x positions and character centers
+        # Compute x positions (the left edge of each character) and character widths
         x = block_rect.x()
-        x_centers = []
+        x_positions = []
         char_widths = []
         for ch in block_text:
+            x_positions.append(x)
             cw = fm.horizontalAdvance(ch)
             char_widths.append(cw)
-            x_centers.append(x + cw / 2)
             x += cw
 
         # Draw each character with rotation based on the tangent of the baseline curve
         for i, ch in enumerate(block_text):
             cw = char_widths[i]
             # Compute numerical derivative for tangent: use central difference if possible
-            if len(x_centers) > 1:
+            if len(x_positions) > 1:
                 if i == 0:
-                    dx = x_centers[1] - x_centers[0]
+                    dx = x_positions[1] - x_positions[0]
                     dy = offsets[1] - offsets[0]
-                elif i == len(x_centers) - 1:
-                    dx = x_centers[-1] - x_centers[-2]
+                elif i == len(x_positions) - 1:
+                    dx = x_positions[-1] - x_positions[-2]
                     dy = offsets[-1] - offsets[-2]
                 else:
-                    dx = x_centers[i + 1] - x_centers[i - 1]
+                    dx = x_positions[i + 1] - x_positions[i - 1]
                     dy = offsets[i + 1] - offsets[i - 1]
                 slope = dy / dx if dx != 0 else 0
             else:
@@ -160,7 +171,7 @@ class CodeEditorBase(QPlainTextEdit):
 
             # Draw character rotated about its center
             painter.save()
-            painter.translate(x_centers[i], baseline + offsets[i])
+            painter.translate(x_positions[i] + cw / 2, baseline + offsets[i])
             painter.rotate(angle)
             painter.drawText(-cw / 2, 0, ch)
             painter.restore()
@@ -171,3 +182,83 @@ class CodeEditorBase(QPlainTextEdit):
         while block.isValid():
             self.drawBlock(painter, fm, block)
             block = block.next()
+
+        # Draw the custom blinking cursor if focused
+        if self.hasFocus() and self.cursor_visible:
+            cursor = self.textCursor()
+            block = cursor.block()
+            block_text = block.text()
+            block_rect = self.blockBoundingGeometry(block).translated(
+                self.contentOffset()
+            )
+            baseline = block_rect.y() + fm.ascent()
+
+            # Retrieve computed offsets for the block
+            offsets = self.offsets_cache.get(block.blockNumber())
+            if offsets is None or len(offsets) != len(block_text):
+                offsets = self.compute_offsets_for_block(fm, block_text)
+
+            # Determine cursor's position within the block
+            pos_in_block = cursor.position() - block.position()
+
+            # Compute x positions (the left edge of each character) and character widths
+            x = block_rect.x()
+            x_positions = []
+            char_widths = []
+            for ch in block_text:
+                x_positions.append(x)
+                cw = fm.horizontalAdvance(ch)
+                char_widths.append(cw)
+                x += cw
+
+            if block_text:
+                if pos_in_block < len(block_text):
+                    cursor_position = x_positions[pos_in_block]
+                    letter_width = char_widths[pos_in_block]
+                    offset = offsets[pos_in_block]
+                    if len(x_positions) > 1:
+                        if pos_in_block == 0:
+                            dx = x_positions[1] - x_positions[0]
+                            dy = offsets[1] - offsets[0]
+                        elif pos_in_block == len(x_positions) - 1:
+                            dx = x_positions[-1] - x_positions[-2]
+                            dy = offsets[-1] - offsets[-2]
+                        else:
+                            dx = (
+                                x_positions[pos_in_block + 1]
+                                - x_positions[pos_in_block - 1]
+                            )
+                            dy = offsets[pos_in_block + 1] - offsets[pos_in_block - 1]
+                        slope = dy / dx if dx != 0 else 0
+                    else:
+                        slope = 0
+                else:
+                    # Cursor at end of block
+                    cursor_position = x  # x now points to the end of the line
+                    letter_width = (
+                        char_widths[-1] if char_widths else fm.horizontalAdvance(" ")
+                    )
+                    offset = offsets[-1] if offsets else 0
+                    if len(x_positions) > 1:
+                        dx = x_positions[-1] - x_positions[-2]
+                        dy = offsets[-1] - offsets[-2]
+                        slope = dy / dx if dx != 0 else 0
+                    else:
+                        slope = 0
+                angle = math.degrees(math.atan(slope))
+                painter.save()
+                painter.translate(cursor_position, baseline + offset - fm.ascent())
+                painter.rotate(angle)
+                cursor_rect = QRectF(0, 0, letter_width, fm.height())
+                painter.fillRect(cursor_rect, QColor(180, 180, 180))
+                painter.restore()
+            else:
+                # If the block is empty, draw a simple block using a default width
+                default_width = fm.horizontalAdvance(" ")
+                painter.save()
+                painter.translate(
+                    block_rect.x() + default_width / 2, baseline - fm.ascent()
+                )
+                cursor_rect = QRectF(-default_width / 2, 0, default_width, fm.height())
+                painter.fillRect(cursor_rect, QColor(180, 180, 180))
+                painter.restore()
