@@ -33,13 +33,13 @@ class MainWindow(QMainWindow):
         self.slider.valueChanged.connect(self.updateWeight)
         self.slider_label = QLabel(f"Weight: {self.slider.value()/10:.1f}")
 
-        # Create a combo box to select the sag style
+        # Create a combo box to select the sag style by iterating over all items in the SagStyle enum
         self.sag_combo = QComboBox()
-        self.sag_combo.addItem(SagStyle.NO_SAG.value)
-        self.sag_combo.addItem(SagStyle.HANGING_END.value)
-        self.sag_combo.addItem(SagStyle.DROOPING_CENTER.value)
+        for style in SagStyle:
+            self.sag_combo.addItem(style.value, style)
         # Set default combo index corresponding to currentSagStyle
-        self.sag_combo.setCurrentIndex(0)
+        default_index = list(SagStyle).index(self.currentSagStyle)
+        self.sag_combo.setCurrentIndex(default_index)
         self.sag_combo.currentIndexChanged.connect(self.updateSagStyle)
 
         # Lay out the editor, slider, and sag style selector in the main window.
@@ -62,14 +62,8 @@ class MainWindow(QMainWindow):
         self.editor.viewport().update()
 
     def updateSagStyle(self, index):
-        # Determine the new sag style based on the combo box index.
-        if index == 0:
-            new_style = SagStyle.NO_SAG
-        elif index == 1:
-            new_style = SagStyle.HANGING_END
-        else:
-            new_style = SagStyle.DROOPING_CENTER
-
+        # Use the actual enum value selected from the combo box
+        new_style = self.sag_combo.itemData(index)
         if new_style != self.currentSagStyle:
             # Preserve current text and weight before recreating the editor.
             current_text = self.editor.toPlainText()
