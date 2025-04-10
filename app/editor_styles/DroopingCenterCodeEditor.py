@@ -20,11 +20,8 @@ class DroopingCenterCodeEditor(CodeEditorBase):
         center,
         length,
     ):
-        if i == 0 or i == length - 1:
-            return 0
-        else:
-            char_center = cum_width + (char_width / 2.0)
-            return max_offset - sag_factor * ((char_center - center) ** 2)
+        char_center = cum_width + (char_width / 2.0)
+        return max_offset - sag_factor * ((char_center - center) ** 2)
 
     def drawBlock(self, painter, fm, block):
         block_text = block.text()
