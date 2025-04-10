@@ -54,8 +54,7 @@ class MainWindow(QMainWindow):
         weight_value = value / 10.0
         self.editor.weight = weight_value
         self.slider_label.setText(f"Weight: {weight_value:.1f}")
-        if hasattr(self.editor, "updateHangingOffsets"):
-            self.editor.updateHangingOffsets()
+        self.editor.updateOffsets()
         self.editor.viewport().update()
 
     def updateSagStyle(self, index):
