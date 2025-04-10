@@ -1,18 +1,8 @@
-from PySide6.QtWidgets import QPlainTextEdit, QWidget, QTextEdit
+from PySide6.QtWidgets import QPlainTextEdit, QTextEdit
 from PySide6.QtGui import QFont, QPainter, QColor, QTextFormat
-from PySide6.QtCore import Qt, QRect, QSize
+from PySide6.QtCore import Qt
 
-
-class LineNumberArea(QWidget):
-    def __init__(self, editor):
-        super().__init__(editor)
-        self.codeEditor = editor
-
-    def sizeHint(self):
-        return QSize(self.codeEditor.lineNumberAreaWidth(), 0)
-
-    def paintEvent(self, event):
-        self.codeEditor.lineNumberAreaPaintEvent(event)
+from app.editor_styles.LineNumberArea import LineNumberArea
 
 
 class CodeEditorBase(QPlainTextEdit):
